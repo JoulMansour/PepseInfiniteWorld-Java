@@ -1,0 +1,42 @@
+# Pepse - Infinite 2D Platformer
+
+A procedurally generated 2D platformer built with Java and the DanoGameLab engine. Features infinite terrain generation using Perlin noise, a dynamic day/night cycle, and a custom physics-based avatar with an integrated energy management system.
+
+## Controls
+* **Left / Right Arrows:** Move horizontally
+* **Spacebar:** Jump
+* **Spacebar + Shift:** Fly (consumes energy)
+
+## Core Features
+* **Infinite Procedural Generation:** The world dynamically generates and unloads chunks of terrain and trees as the player moves, ensuring endless gameplay without memory bloat.
+* **Deterministic Worlds:** Utilizing coordinate-based random seeding, the terrain and flora generation is completely deterministic. Returning to a previous coordinate will yield the exact same environment.
+* **Dynamic Environment:** Features a continuous day/night cycle with a rotating sun and fading night overlay, alongside a parallax-style sky with moving clouds, birds, and planes.
+* **Energy Management:** Flying consumes energy, which naturally regenerates when idle on the ground or instantly replenishes by collecting fruits from trees.
+
+---
+
+## Architecture & Implementation Details
+
+### Avatar Implementation
+To implement the Avatar, we created a dedicated `pepse.world.avatar` package containing the `Avatar` and `EnergyMeter` classes. The `Avatar` class extends `GameObject` and handles physics, input processing, and movement logic. To adhere to clean code principles, we separated the UI logic into the `EnergyMeter` class. The relationship between them is maintained via a functional callback (`Consumer<Float>`); the Avatar triggers this callback whenever its internal energy state changes, allowing the EnergyMeter to update the display without the Avatar holding a direct reference to the UI object.
+
+### Avatar State Management
+We designed state changes by monitoring the Avatar's velocity and input within the `update()` loop. We distinguished between four main states: Idle (no velocity), Running (horizontal velocity), Jumping/Falling (vertical velocity), and Flying (triggered by specific key combinations). Based on these conditions, we dynamically swapped the object's `Renderable` (animation) to visually reflect the current physical state, ensuring immediate feedback to the player.
+
+### Avatar Energy System
+Energy is modeled as a numeric value (0-100) managed internally by the Avatar. It depletes during flight and regenerates while idle. We avoided tight coupling by passing a callback function from the `EnergyMeter` to the `Avatar` upon initialization. When the energy value changes, the Avatar invokes this callback, which updates the text on the `EnergyMeter`. Additionally, the meter includes visual logic to change the text color to red when energy drops below 20%, providing an intuitive warning to the user.
+
+### Trees Package Implementation
+The `pepse.world.trees` package was implemented using a separation of concerns between generation and object behavior. The `Flora` class acts as the manager, determining tree positions based on the terrain height and a deterministic seed. It delegates the construction of individual trees to the `Tree` class, which assembles `Leaf` and `Fruit` objects. The `Leaf` class manages its own wind simulation using scheduled transitions, while the `Fruit` class handles collision logic to restore the Avatar's energy.
+
+### Infinite World & Sky
+We introduced a new class, `InfiniteWorld`, to handle the procedural generation of terrain and trees. This class monitors the Avatar's position and dynamically loads new "chunks" of the world while removing distant objects to maintain performance. Additionally, we enhanced the `Sky` class with a `LoopingGameObject` inner class. This allowed us to add clouds, birds, and planes that traverse the screen and seamlessly loop back to the beginning, creating a lively and continuous background atmosphere.
+
+
+---
+
+## How to Run
+1. Clone this repository.
+2. Open the project in your preferred Java IDE (e.g., IntelliJ IDEA, Eclipse).
+3. Ensure the **DanoGameLab** library is correctly linked to your project dependencies.
+4. Run the `main` method located in `pepse.PepseGameManager`.
